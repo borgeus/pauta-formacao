@@ -2035,7 +2035,7 @@ body:not(.user-is-admin) .admin-only {
 }
 
 .footer-signature {
-  max-width: 150px;
+  max-width: 230px;
   width: 100%;
   height: auto;
   object-fit: contain;
