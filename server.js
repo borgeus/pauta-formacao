@@ -56,7 +56,7 @@ const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
 
 // Helper: Ler Banco de Dados de Configurações
-async function await readSettings() {
+async function readSettings() {
   if (useMongo) {
     let setting = await Setting.findOne().lean();
     if (!setting) {
@@ -88,7 +88,7 @@ async function await readSettings() {
 }
 
 // Helper: Gravar Banco de Dados de Configurações
-async function await writeSettings(data) {
+async function writeSettings(data) {
   if (useMongo) {
     await Setting.deleteMany({});
     await Setting.insertMany([data]);
@@ -115,7 +115,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Helper: Ler Banco de Dados das Pautas
-async function await readDB() {
+async function readDB() {
   if (useMongo) {
     return await Idea.find().lean();
   }
@@ -138,7 +138,7 @@ async function await readDB() {
 }
 
 // Helper: Gravar Banco de Dados das Pautas
-async function await writeDB(data) {
+async function writeDB(data) {
   if (useMongo) {
     await Idea.deleteMany({});
     await Idea.insertMany(data);
@@ -159,7 +159,7 @@ async function await writeDB(data) {
 }
 
 // Helper: Ler Banco de Dados de Usuários
-async function await readUsers() {
+async function readUsers() {
   if (useMongo) {
     let users = await User.find().lean();
     if (users.length === 0) {
@@ -197,7 +197,7 @@ async function await readUsers() {
 }
 
 // Helper: Gravar Banco de Dados de Usuários
-async function await writeUsers(data) {
+async function writeUsers(data) {
   if (useMongo) {
     await User.deleteMany({});
     await User.insertMany(data);
@@ -218,18 +218,18 @@ async function await writeUsers(data) {
 }
 
 // Helper: Verificar se usuário solicitante é Administrador
-async function await checkAdmin(req) {
+async function checkAdmin(req) {
   const requestUser = req.headers['x-user'];
   if (!requestUser) return false;
-  const users = await await readUsers();
+  const users = await readUsers();
   const user = users.find(u => u.username.toLowerCase() === requestUser.toLowerCase());
   return user && user.role === 'admin';
 }
 // Helper: Verificar se o usuário solicitante é Válido (Autenticado)
-async function await checkAuth(req) {
+async function checkAuth(req) {
   const requestUser = req.headers['x-user'];
   if (!requestUser) return null;
-  const users = await await readUsers();
+  const users = await readUsers();
   const user = users.find(u => u.username.toLowerCase() === requestUser.toLowerCase());
   return user;
 }
