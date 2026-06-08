@@ -199,8 +199,14 @@ async function readUsers() {
 // Helper: Gravar Banco de Dados de Usuários
 async function writeUsers(data) {
   if (useMongo) {
-    await User.deleteMany({});
-    await User.insertMany(data);
+    // Usa upsert para evitar erros de índice duplicado
+    for (const user of data) {
+      await User.findOneAndUpdate(
+        { username: user.username },
+        user,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
     return true;
   }
 
@@ -286,15 +292,34 @@ app.post('/api/users', async (req, res) => {
     return res.status(400).json({ error: 'Campos obrigatórios ausentes: username, password, fullName, role' });
   }
 
-  const users = await readUsers();
-  const exists = users.some(u => u.username.toLowerCase() === username.toLowerCase());
+  const cleanUsername = username.toLowerCase().trim();
 
+  if (useMongo) {
+    // Salva direto no MongoDB, evitando o ciclo deleteMany/insertMany
+    const exists = await User.findOne({ username: cleanUsername });
+    if (exists) {
+      return res.status(400).json({ error: 'Este nome de usuário já está cadastrado.' });
+    }
+    const newUser = await User.create({
+      username: cleanUsername,
+      password,
+      fullName,
+      role,
+      photo: photo || null,
+      jobTitle: jobTitle || null
+    });
+    return res.status(201).json(newUser);
+  }
+
+  // Fallback para arquivo local
+  const users = await readUsers();
+  const exists = users.some(u => u.username.toLowerCase() === cleanUsername);
   if (exists) {
     return res.status(400).json({ error: 'Este nome de usuário já está cadastrado.' });
   }
 
   const newUser = {
-    username: username.toLowerCase().trim(),
+    username: cleanUsername,
     password,
     fullName,
     role,
@@ -304,7 +329,6 @@ app.post('/api/users', async (req, res) => {
 
   users.push(newUser);
   await writeUsers(users);
-
   res.status(201).json(newUser);
 });
 
