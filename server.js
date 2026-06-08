@@ -4,8 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 const MONGO_URI = process.env.MONGO_URI;
-
-let useMongo = false;
+let useMongo = !!MONGO_URI;
 
 // Mongoose Schemas
 const userSchema = new mongoose.Schema({
@@ -41,10 +40,11 @@ const ideaSchema = new mongoose.Schema({
 });
 const Idea = mongoose.model('Idea', ideaSchema);
 
+
+
 if (MONGO_URI) {
   mongoose.connect(MONGO_URI).then(() => {
     console.log('MongoDB conectado com sucesso!');
-    useMongo = true;
   }).catch(err => console.error('Erro ao conectar no MongoDB:', err));
 }
 
