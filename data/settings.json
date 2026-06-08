@@ -1,0 +1,14 @@
+{
+  "categories": [
+    "Processos",
+    "Tecnologia",
+    "Infraestrutura",
+    "Cultura",
+    "Outros"
+  ],
+  "priorities": [
+    "Baixa",
+    "Média",
+    "Alta"
+  ]
+}

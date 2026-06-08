@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pauta Formação - Gestão de Pautas e Ideias Colaborativas</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CSS Principal -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Barra de Notificação Toast -->
+  <div id="toastNotification" class="toast hidden">
+    <span id="toastMessage">Operação realizada com sucesso!</span>
+  </div>
+
+  <!-- TELA DE LOGIN (OVERLAY INICIAL) -->
+  <div id="loginScreen" class="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-icon">
+          <img src="logo.png" alt="Logo" class="logo-img">
+        </div>
+        <h2>Pauta Formação</h2>
+        <p>Acesse o painel com as credenciais da sua equipe</p>
+      </div>
+      
+      <div id="loginErrorAlert" class="login-error hidden">
+        <i class="fa-solid fa-circle-exclamation"></i> <span id="loginErrorText">Erro ao entrar</span>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label for="loginUsername">Usuário</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" id="loginUsername" required placeholder="Digite seu usuário..." autocomplete="username">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Senha de Acesso</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="loginPassword" required placeholder="Digite sua senha..." autocomplete="current-password">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          Entrar no Sistema <i class="fa-solid fa-right-to-bracket"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONTAINER DO DASHBOARD PRINCIPAL -->
+  <div id="dashboardApp" class="app-container hidden">
+    
+    <!-- Cabeçalho (Header) -->
+    <header class="main-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <img src="logo.png" alt="Logo" class="logo-img">
+        </div>
+        <div>
+          <h1 class="app-title">Pauta Formação</h1>
+          <p class="app-subtitle">Ideias & Pautas para Reuniões</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Indicador de Status do Servidor -->
+        <div id="serverStatus" class="status-indicator online">
+          <span class="indicator-dot"></span>
+          <span id="statusText" class="indicator-text">Servidor Online</span>
+        </div>
+
+        <!-- Perfil do Usuário Logado -->
+        <div id="userProfileArea" class="user-profile-area">
+          <div id="userProfilePhotoContainer">
+            <i class="fa-solid fa-circle-user profile-icon"></i>
+          </div>
+          <div class="user-profile-info">
+            <span id="userProfileName" class="profile-name">Nome</span>
+            <span id="userProfileBadge" class="profile-badge badge">Colaborador</span>
+          </div>
+          <button id="btnLogout" class="btn-logout" title="Sair do Pauta Formação" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+
+        <!-- Botões de Ação Global -->
+        <button id="btnNewTopic" class="btn btn-primary" onclick="openCreateModal()">
+          <i class="fa-solid fa-plus"></i> Novo Tópico
+        </button>
+        
+        <button id="btnAdminPanel" class="btn btn-secondary admin-only" onclick="openAdminPanel()">
+          <i class="fa-solid fa-users-gear"></i> Painel Admin
+        </button>
+        
+        <button id="btnMeetingMode" class="btn btn-secondary admin-only" onclick="enterMeetingMode()">
+          <i class="fa-solid fa-chalkboard-user"></i> Modo Reunião
+        </button>
+        
+        <button id="btnPrintAgenda" class="btn btn-icon" title="Imprimir Pauta" onclick="window.print()">
+          <i class="fa-solid fa-print"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Cartões de Resumo de Estatísticas (Stats Row) -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon bg-purple">
+          <i class="fa-solid fa-lightbulb"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total de Ideias</span>
+          <h3 id="statTotalIdeas" class="stat-value">0</h3>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon bg-yellow">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Tópicos Pendentes</span>
+          <h3 id="statPendingIdeas" class="stat-value">0</h3>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon bg-blue">
+          <i class="fa-solid fa-comments"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Em Discussão</span>
+          <h3 id="statInDiscussionIdeas" class="stat-value">0</h3>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon bg-green">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Tópicos Resolvidos</span>
+          <h3 id="statResolvedIdeas" class="stat-value">0</h3>
+        </div>
+      </div>
+    </section>
+
+    <!-- Barra de Filtros e Busca -->
+    <section class="filter-section">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="searchInput" placeholder="Buscar por título, descrição ou autor..." oninput="filterIdeas()">
+      </div>
+
+      <div class="filter-controls">
+        <div class="filter-group">
+          <label for="filterCategory"><i class="fa-solid fa-filter"></i> Categoria:</label>
+          <select id="filterCategory" onchange="filterIdeas()">
+            <option value="Todos">Todas</option>
+            <!-- Preenchido dinamicamente via JS -->
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filterStatus"><i class="fa-solid fa-circle-notch"></i> Status:</label>
+          <select id="filterStatus" onchange="filterIdeas()">
+            <option value="Todos">Todos</option>
+            <option value="Pendente">Pendentes</option>
+            <option value="Na Pauta">Na Pauta</option>
+            <option value="Em Discussão">Em Discussão</option>
+            <option value="Resolvido">Resolvidos</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="sortSelect"><i class="fa-solid fa-arrow-down-wide-short"></i> Ordenar:</label>
+          <select id="sortSelect" onchange="filterIdeas()">
+            <option value="votos">Mais Apoiados (Votos)</option>
+            <option value="recentes">Mais Recentes</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grid de Pautas (Lista Principal) -->
+    <main class="content-area">
+      <div id="ideasGrid" class="ideas-grid">
+        <div class="loading-container">
+          <i class="fa-solid fa-spinner fa-spin loader"></i> Carregando pautas...
+        </div>
+      </div>
+    </main>
+
+    <!-- Rodapé com Assinatura -->
+    <footer class="app-footer">
+      <img src="rodape.png" alt="Assinatura" class="footer-signature">
+    </footer>
+  </div>
+
+  <!-- MODAL: CRIAR / EDITAR TÓPICO -->
+  <div id="topicModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modalTitle" class="modal-headline">Propor Novo Tópico</h2>
+        <button class="btn-close" onclick="closeModal('topicModal')">&times;</button>
+      </div>
+      <form id="topicForm" onsubmit="saveTopic(event)">
+        <input type="hidden" id="topicId">
+        
+        <div class="form-group">
+          <label for="inputTitle">Título do Tópico <span class="required">*</span></label>
+          <input type="text" id="inputTitle" required placeholder="Ex: Criar guia de estilo para o projeto" maxlength="80">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="selectCategory">Categoria <span class="required">*</span></label>
+            <select id="selectCategory" required>
+              <option value="" disabled selected>Selecione...</option>
+              <!-- Preenchido dinamicamente via JS -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="selectPriority">Prioridade <span class="required">*</span></label>
+            <select id="selectPriority" required>
+              <!-- Preenchido dinamicamente via JS -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputDescription">Descrição Detalhada <span class="required">*</span></label>
+          <textarea id="inputDescription" rows="5" required placeholder="Explique por que este tópico deve ser discutido na reunião e quais alternativas propõe..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('topicModal')">Cancelar</button>
+          <button type="submit" id="btnSaveSubmit" class="btn btn-primary">Adicionar Tópico</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALHES DO TÓPICO & COMENTÁRIOS -->
+  <div id="detailsModal" class="modal-overlay hidden">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <div class="details-badges">
+          <span id="detailCategory" class="badge">Processos</span>
+          <span id="detailPriority" class="badge badge-priority-media">Média</span>
+        </div>
+        <button class="btn-close" onclick="closeModal('detailsModal')">&times;</button>
+      </div>
+
+      <div class="modal-body-split">
+        <!-- Lado Esquerdo: Detalhes da Ideia -->
+        <div class="details-left">
+          <h2 id="detailTitle" class="detail-title">Título do Tópico</h2>
+          
+          <div class="metadata-row">
+            <span><i class="fa-regular fa-user"></i> Proposto por: <strong id="detailAuthor">Nome</strong></span>
+            <span><i class="fa-regular fa-calendar"></i> Criado em: <span id="detailDate">08/06/2026</span></span>
+          </div>
+
+          <hr class="divider">
+
+          <div class="detail-description-box">
+            <h4 class="section-title-small">Descrição:</h4>
+            <p id="detailDescription" class="detail-description-text">Texto explicativo longo...</p>
+          </div>
+
+          <div class="detail-notes-box">
+            <h4 class="section-title-small"><i class="fa-solid fa-pen-to-square"></i> Decisões & Anotações da Reunião (Ata):</h4>
+            <textarea id="detailNotes" rows="3" placeholder="Decisões serão anotadas pelo administrador da reunião..." oninput="autoSaveNotes()"></textarea>
+            <small class="notes-hint" id="notesEditHint">Modificações são salvas automaticamente pelo administrador.</small>
+          </div>
+
+          <div class="details-actions">
+            <!-- Votos -->
+            <button id="btnDetailVote" class="btn btn-vote-large" onclick="toggleVoteDetail()">
+              <i class="fa-solid fa-thumbs-up animate-thumbs"></i> Apoiar Tópico <span id="detailVoteCount" class="vote-badge">0</span>
+            </button>
+
+            <!-- Ações de Gerenciamento (Restrito à Admin) -->
+            <div class="status-modifier-group">
+              <label for="detailStatusSelector">Status:</label>
+              <select id="detailStatusSelector" onchange="changeStatusDetail()">
+                <option value="Pendente">Pendente</option>
+                <option value="Na Pauta">Na Pauta</option>
+                <option value="Em Discussão">Em Discussão</option>
+                <option value="Resolvido">Resolvido</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Editar/Excluir (Restrito à Admin) -->
+          <div class="danger-zone admin-only">
+            <button class="btn btn-text-edit" onclick="editTopicFromDetail()"><i class="fa-solid fa-pen"></i> Editar</button>
+            <button class="btn btn-text-danger" onclick="deleteTopicFromDetail()"><i class="fa-solid fa-trash"></i> Excluir</button>
+          </div>
+        </div>
+
+        <!-- Lado Direito: Comentários/Discussão -->
+        <div class="details-right">
+          <h3 class="comments-heading"><i class="fa-regular fa-comments"></i> Discussão Prévia (<span id="commentCount">0</span>)</h3>
+          
+          <div id="commentsList" class="comments-list">
+            <div class="no-comments">Nenhum comentário ainda. Seja o primeiro a comentar!</div>
+          </div>
+
+          <form id="commentForm" class="comment-input-area" onsubmit="submitComment(event)">
+            <textarea id="commentTextInput" rows="2" placeholder="Escreva sua opinião ou dúvida..." required></textarea>
+            <button type="submit" class="btn btn-primary btn-send-comment">
+              Enviar <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PAINEL ADMINISTRATIVO (CADASTRO E GESTÃO DE MEMBROS) -->
+  <div id="adminPanelModal" class="modal-overlay hidden">
+    <div class="modal-card modal-xlarge">
+      <div class="modal-header">
+        <h2 class="modal-headline"><i class="fa-solid fa-users-gear"></i> Painel Administrativo</h2>
+        <button class="btn-close" onclick="closeModal('adminPanelModal')">&times;</button>
+      </div>
+
+      <!-- ABAS DO PAINEL ADMIN -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" id="tabUsers" onclick="switchAdminTab('users')">
+          <i class="fa-solid fa-users"></i> Equipe
+        </button>
+        <button class="admin-tab" id="tabSettings" onclick="switchAdminTab('settings')">
+          <i class="fa-solid fa-sliders"></i> Categorias &amp; Prioridades
+        </button>
+      </div>
+
+      <!-- ABA 1: GESTÃO DE USUÁRIOS -->
+      <div id="adminTabUsers" class="admin-tab-content">
+        <div class="modal-body-split">
+          <!-- Esquerda: Cadastrar Usuário -->
+          <div class="details-left">
+            <h3 class="section-title-small" style="margin-bottom: 16px;"><i class="fa-solid fa-user-plus"></i> Registrar Novo Membro</h3>
+            <form id="registerUserForm" onsubmit="registerUser(event)">
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="regFullName">Nome Completo</label>
+                  <input type="text" id="regFullName" required placeholder="Ex: Ana Paula de Souza">
+                </div>
+                <div class="form-group">
+                  <label for="regJobTitle">Função (Cargo)</label>
+                  <input type="text" id="regJobTitle" required placeholder="Ex: Desenvolvedora Front-end">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="regUsername">Nome de Usuário (Login)</label>
+                <input type="text" id="regUsername" required placeholder="Ex: ana.paula" pattern="^[a-zA-Z0-9._-]+$">
+                <small style="color: var(--text-muted); font-size: 0.7rem; margin-top: -4px;">Use apenas letras, números e pontos.</small>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="regPassword">Senha de Acesso</label>
+                  <input type="text" id="regPassword" required placeholder="Crie uma senha...">
+                </div>
+
+                <div class="form-group">
+                  <label for="regRole">Perfil de Acesso</label>
+                  <select id="regRole" required>
+                    <option value="user" selected>Colaborador Comum</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="regPhoto">Foto do Perfil (Opcional)</label>
+                <input type="file" id="regPhoto" accept="image/*" style="padding: 8px;">
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="margin-top: 15px; width: 100%;">
+                <i class="fa-solid fa-user-check"></i> Cadastrar Membro da Equipe
+              </button>
+            </form>
+          </div>
+
+          <!-- Direita: Lista de Usuários cadastrados -->
+          <div class="details-right" style="overflow-y: auto;">
+            <h3 class="section-title-small" style="margin-bottom: 12px;"><i class="fa-solid fa-users"></i> Equipe Cadastrada</h3>
+            <div class="table-wrapper">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Membro</th>
+                    <th>Cargo</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <!-- Preenchido via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: CONFIGURAÇÕES (CATEGORIAS E PRIORIDADES) -->
+      <div id="adminTabSettings" class="admin-tab-content hidden">
+        <div class="modal-body-split">
+
+          <!-- Esquerda: Categorias -->
+          <div class="details-left">
+            <h3 class="section-title-small" style="margin-bottom: 16px;">
+              <i class="fa-solid fa-tags"></i> Categorias de Pauta
+            </h3>
+
+            <!-- Adicionar nova categoria -->
+            <form id="addCategoryForm" onsubmit="addCategory(event)" class="settings-add-form">
+              <div class="settings-input-row">
+                <input type="text" id="newCategoryInput" placeholder="Ex: Financeiro, Jurídico, RH..." maxlength="40" required>
+                <button type="submit" class="btn btn-primary" style="white-space:nowrap">
+                  <i class="fa-solid fa-plus"></i> Adicionar
+                </button>
+              </div>
+            </form>
+
+            <!-- Lista de categorias existentes -->
+            <div id="categoriesList" class="settings-tags-list">
+              <!-- Renderizado via JS -->
+            </div>
+          </div>
+
+          <!-- Direita: Prioridades -->
+          <div class="details-right" style="overflow-y: auto;">
+            <h3 class="section-title-small" style="margin-bottom: 16px;">
+              <i class="fa-solid fa-layer-group"></i> Níveis de Prioridade
+            </h3>
+
+            <!-- Adicionar nova prioridade -->
+            <form id="addPriorityForm" onsubmit="addPriority(event)" class="settings-add-form">
+              <div class="settings-input-row">
+                <input type="text" id="newPriorityInput" placeholder="Ex: Urgente, Crítica, Leve..." maxlength="30" required>
+                <button type="submit" class="btn btn-primary" style="white-space:nowrap">
+                  <i class="fa-solid fa-plus"></i> Adicionar
+                </button>
+              </div>
+            </form>
+
+            <!-- Lista de prioridades existentes -->
+            <div id="prioritiesList" class="settings-tags-list">
+              <!-- Renderizado via JS -->
+            </div>
+
+            <div class="settings-info-box">
+              <i class="fa-solid fa-circle-info"></i>
+              As categorias e prioridades criadas aqui aparecerão automaticamente nos formulários de todos os membros da equipe.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INTERFACE MODO REUNIÃO (MINIMALISTA PARA PROJETOR) -->
+  <div id="meetingView" class="meeting-overlay hidden">
+    <!-- Barra superior do Modo Reunião -->
+    <header class="meeting-header">
+      <div class="meeting-brand">
+        <i class="fa-solid fa-chalkboard-user"></i>
+        <span>Pauta Formação — Modo Reunião Presencial</span>
+      </div>
+      
+      <!-- Cronômetro centralizado -->
+      <div class="meeting-timer-box">
+        <i class="fa-regular fa-clock"></i>
+        <span id="meetingTimer">10:00</span>
+        <button id="btnTimerToggle" class="btn-timer-action" title="Iniciar/Pausar" onclick="toggleTimer()">
+          <i class="fa-solid fa-play"></i>
+        </button>
+        <button id="btnTimerReset" class="btn-timer-action" title="Reiniciar" onclick="resetTimer()">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+      </div>
+
+      <button class="btn btn-danger-dark" onclick="exitMeetingMode()">
+        <i class="fa-solid fa-xmark"></i> Sair do Modo Reunião
+      </button>
+    </header>
+
+    <div class="meeting-container">
+      <!-- Painel Esquerdo: Lista de Tópicos Ativos para Discutir -->
+      <aside class="meeting-sidebar">
+        <h3 class="sidebar-title">Ordem do Dia</h3>
+        <p class="sidebar-subtitle">Tópicos na pauta para discussão:</p>
+        
+        <div id="meetingSidebarList" class="meeting-sidebar-list">
+          <!-- Renderizado via JS -->
+        </div>
+      </aside>
+
+      <!-- Painel Direito: Tópico em Discussão Ativo -->
+      <main class="meeting-main-content">
+        <div id="activeDiscussionContainer">
+          <div class="meeting-empty-state">
+            <i class="fa-solid fa-arrow-left arrow-bounce"></i>
+            <h3>Selecione um tópico na lista lateral para iniciar a discussão</h3>
+            <p>Os tópicos com status "Na Pauta" e "Em Discussão" aparecerão listados ao lado.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- JS Principal -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "pauta-colab",
+  "version": "1.0.0",
+  "description": "Sistema colaborativo de pauta de reuniões online",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mongoose": "^9.6.3"
+  }
+}
